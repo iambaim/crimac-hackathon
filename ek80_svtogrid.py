@@ -62,10 +62,14 @@ ek80_CW.read_raw(dir + files[0])
 # In[4]:
 
 
+print(ek80_CW)
+
+
+# In[5]:
+
+
 # Select a EK80 file
 raw_obj = ek80_CW
-
-#da_empty = xr.DataArray(name="sv", data=np.float32(0.0), dims=['frequency', 'ping_time', 'range'], coords=[[np.float32(0.0)], [np.datetime64('NaT')], [np.float32(0.0)]])
 
 da_set = False
 
@@ -111,8 +115,14 @@ for chan in list(raw_obj.raw_data.keys()):
         da_range_mask = range_mask
         da_set = True
 
+# Getting motion data
+obj_heave = raw_obj.motion_data.heave
+obj_pitch = raw_obj.motion_data.pitch
+obj_roll = raw_obj.motion_data.roll
+obj_heading = raw_obj.motion_data.heading
 
-# In[5]:
+
+# In[6]:
 
 
 # Convert the masks as boolean
@@ -120,7 +130,13 @@ da_ping_mask = da_ping_mask.fillna(0).astype(bool)
 da_range_mask = da_range_mask.fillna(0).astype(bool)
 
 
-# In[6]:
+# In[7]:
+
+
+da
+
+
+# In[8]:
 
 
 # Filtering one frequency back to the raw sv
@@ -129,19 +145,19 @@ da_sub_range_mask = da_range_mask.loc["1.8e+04"]
 da_sub = da.loc["1.8e+04"][da_sub_ping_mask, da_sub_range_mask]
 
 
-# In[7]:
+# In[9]:
 
 
 da_sub
 
 
-# In[8]:
+# In[10]:
 
 
 da_sub.plot.contourf(robust = True, cmap=simrad_cmap)
 
 
-# In[9]:
+# In[11]:
 
 
 # Crate a dataset
@@ -150,6 +166,10 @@ ds = xr.Dataset(
         sv=(["frequency", "ping_time", "range"], da),
         ping_mask=(["frequency", "ping_time"], da_ping_mask),
         range_mask=(["frequency", "range"], da_range_mask),
+        heave=(["ping_time"], obj_heave),
+        pitch=(["ping_time"], obj_pitch),
+        roll=(["ping_time"], obj_roll),
+        heading=(["ping_time"], obj_heading),
         ),
     coords=dict(
         frequency = da.frequency,
@@ -160,13 +180,13 @@ ds = xr.Dataset(
 )
 
 
-# In[10]:
+# In[12]:
 
 
 ds
 
 
-# In[11]:
+# In[13]:
 
 
 # Save into netcdf
@@ -175,7 +195,7 @@ encoding = {var: comp for var in ds.data_vars}
 ds.to_netcdf("EK80_CW_sv_only.nc", encoding=encoding)
 
 
-# In[12]:
+# In[14]:
 
 
 # Save into zarr
@@ -184,7 +204,7 @@ encoding = {var: {"compressor" : compressor} for var in ds.data_vars}
 ds.to_zarr("EK80_CW_sv_only.zarr", encoding=encoding)
 
 
-# In[13]:
+# In[15]:
 
 
 # Try to open them
@@ -192,22 +212,16 @@ ds_nc = xr.open_dataset("EK80_CW_sv_only.nc")
 ds_zr = xr.open_zarr("EK80_CW_sv_only.zarr")
 
 
-# In[14]:
+# In[16]:
 
 
 # Open NetCDF
 ds_nc
 
 
-# In[15]:
+# In[17]:
 
 
 # Open Zarr
 ds_zr
-
-
-# In[ ]:
-
-
-
 
